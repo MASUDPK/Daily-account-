@@ -1,0 +1,264 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Deny all access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isIsoDate(val) {
+      return val is string && val.size() == 10 && val.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidPurchaseCategory(cat) {
+      return cat in ['Cement', 'Rod / Steel', 'Sand', 'Stone / Brick Chips', 'Brick', 'Electrical', 'Plumbing', 'Tiles', 'Paint', 'Hardware', 'Labour', 'Other'];
+    }
+
+    function isValidExpenseCategory(cat) {
+      return cat in ['Labour', 'Transport', 'Food', 'Electricity', 'Water', 'Equipment', 'Maintenance', 'Office', 'Other'];
+    }
+
+    function isValidPaymentMethod(method) {
+      return method in ['Cash', 'Bank', 'Mobile Banking', 'Other'];
+    }
+
+    function isValidLiquidAccount(acc) {
+      return acc in ['Cash', 'Bank', 'Mobile Banking'];
+    }
+
+    // Validation Blueprints
+    function isValidSiteSettings(data, uid) {
+      return data.keys().hasAll(['uid', 'siteName', 'siteLocation', 'openingCash', 'openingBank', 'openingMobile', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'siteName', 'siteLocation', 'openingCash', 'openingBank', 'openingMobile', 'createdAt', 'updatedAt']) &&
+        data.uid == uid &&
+        data.uid == request.auth.uid &&
+        data.siteName is string && data.siteName.size() >= 1 && data.siteName.size() <= 120 &&
+        data.siteLocation is string && data.siteLocation.size() <= 200 &&
+        data.openingCash is number && data.openingCash >= 0 &&
+        data.openingBank is number && data.openingBank >= 0 &&
+        data.openingMobile is number && data.openingMobile >= 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidShop(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'shopName', 'ownerName', 'phone', 'address', 'openingBalance', 'openingBalanceType', 'notes', 'isActive', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'shopName', 'ownerName', 'phone', 'address', 'openingBalance', 'openingBalanceType', 'notes', 'isActive', 'createdAt', 'updatedAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 120 &&
+        data.ownerName is string && data.ownerName.size() <= 100 &&
+        data.phone is string && data.phone.size() <= 32 &&
+        data.address is string && data.address.size() <= 240 &&
+        data.openingBalance is number && data.openingBalance >= 0 &&
+        data.openingBalanceType in ['payable', 'receivable'] &&
+        data.notes is string && data.notes.size() <= 500 &&
+        data.isActive is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPurchase(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'date', 'shopId', 'shopName', 'materialName', 'category', 'quantity', 'unit', 'rate', 'totalAmount', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'date', 'shopId', 'shopName', 'materialName', 'category', 'quantity', 'unit', 'rate', 'totalAmount', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        isIsoDate(data.date) &&
+        isValidId(data.shopId) &&
+        data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 120 &&
+        data.materialName is string && data.materialName.size() >= 1 && data.materialName.size() <= 120 &&
+        isValidPurchaseCategory(data.category) &&
+        data.quantity is number && data.quantity > 0 &&
+        data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 32 &&
+        data.rate is number && data.rate >= 0 &&
+        data.totalAmount is number && data.totalAmount >= 0 &&
+        data.notes is string && data.notes.size() <= 500 &&
+        isValidId(data.clientRequestId) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'date', 'shopId', 'shopName', 'amount', 'method', 'referenceNumber', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'date', 'shopId', 'shopName', 'amount', 'method', 'referenceNumber', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        isIsoDate(data.date) &&
+        isValidId(data.shopId) &&
+        data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 120 &&
+        data.amount is number && data.amount > 0 &&
+        isValidPaymentMethod(data.method) &&
+        data.referenceNumber is string && data.referenceNumber.size() <= 80 &&
+        data.notes is string && data.notes.size() <= 500 &&
+        isValidId(data.clientRequestId) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidExpense(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'date', 'category', 'description', 'amount', 'method', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'date', 'category', 'description', 'amount', 'method', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        isIsoDate(data.date) &&
+        isValidExpenseCategory(data.category) &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 200 &&
+        data.amount is number && data.amount > 0 &&
+        isValidPaymentMethod(data.method) &&
+        data.notes is string && data.notes.size() <= 500 &&
+        isValidId(data.clientRequestId) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCashTx(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'date', 'type', 'account', 'toAccount', 'amount', 'description', 'referenceNumber', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'date', 'type', 'account', 'toAccount', 'amount', 'description', 'referenceNumber', 'notes', 'clientRequestId', 'createdAt', 'updatedAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        isIsoDate(data.date) &&
+        data.type in ['cash_in', 'cash_out', 'transfer'] &&
+        isValidLiquidAccount(data.account) &&
+        ((data.type == 'transfer' && isValidLiquidAccount(data.toAccount) && data.toAccount != data.account) || (data.type != 'transfer' && data.toAccount == '')) &&
+        data.amount is number && data.amount > 0 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 200 &&
+        data.referenceNumber is string && data.referenceNumber.size() <= 80 &&
+        data.notes is string && data.notes.size() <= 500 &&
+        isValidId(data.clientRequestId) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data, docId) {
+      return data.keys().hasAll(['id', 'uid', 'action', 'entityType', 'entityId', 'summary', 'beforeData', 'afterData', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'action', 'entityType', 'entityId', 'summary', 'beforeData', 'afterData', 'createdAt']) &&
+        data.id == docId &&
+        isValidId(data.id) &&
+        data.uid == request.auth.uid &&
+        data.action in ['create', 'update', 'delete', 'restore', 'settings'] &&
+        data.entityType in ['shop', 'purchase', 'payment', 'expense', 'cash', 'settings', 'backup'] &&
+        data.entityId is string && data.entityId.size() >= 1 && data.entityId.size() <= 128 &&
+        data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 300 &&
+        data.beforeData is string && data.beforeData.size() <= 2000 &&
+        data.afterData is string && data.afterData.size() <= 2000 &&
+        data.createdAt is timestamp;
+    }
+
+    // Collection Rules
+    match /siteSettings/{uid} {
+      allow get: if isValidId(uid) && isOwner(uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(uid) && isOwner(uid) && isValidSiteSettings(incoming(), uid);
+      allow update: if isValidId(uid) && isOwner(uid) && isValidSiteSettings(incoming(), uid) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['siteName', 'siteLocation', 'openingCash', 'openingBank', 'openingMobile', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /shops/{shopId} {
+      allow get: if isValidId(shopId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(shopId) && isSignedIn() && isValidShop(incoming(), shopId);
+      allow update: if isValidId(shopId) && isOwner(existing().uid) && isValidShop(incoming(), shopId) &&
+        incoming().id == existing().id &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['shopName', 'ownerName', 'phone', 'address', 'openingBalance', 'openingBalanceType', 'notes', 'isActive', 'updatedAt']);
+      allow delete: if isValidId(shopId) && isOwner(existing().uid);
+    }
+
+    match /purchases/{purchaseId} {
+      allow get: if isValidId(purchaseId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(purchaseId) && isSignedIn() && isValidPurchase(incoming(), purchaseId) &&
+        existsAfter(/databases/$(database)/documents/shops/$(incoming().shopId)) &&
+        getAfter(/databases/$(database)/documents/shops/$(incoming().shopId)).data.uid == request.auth.uid;
+      allow update: if isValidId(purchaseId) && isOwner(existing().uid) && isValidPurchase(incoming(), purchaseId) &&
+        incoming().id == existing().id &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().clientRequestId == existing().clientRequestId &&
+        existsAfter(/databases/$(database)/documents/shops/$(incoming().shopId)) &&
+        getAfter(/databases/$(database)/documents/shops/$(incoming().shopId)).data.uid == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['date', 'shopId', 'shopName', 'materialName', 'category', 'quantity', 'unit', 'rate', 'totalAmount', 'notes', 'updatedAt']);
+      allow delete: if isValidId(purchaseId) && isOwner(existing().uid);
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(paymentId) && isSignedIn() && isValidPayment(incoming(), paymentId) &&
+        existsAfter(/databases/$(database)/documents/shops/$(incoming().shopId)) &&
+        getAfter(/databases/$(database)/documents/shops/$(incoming().shopId)).data.uid == request.auth.uid;
+      allow update: if isValidId(paymentId) && isOwner(existing().uid) && isValidPayment(incoming(), paymentId) &&
+        incoming().id == existing().id &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().clientRequestId == existing().clientRequestId &&
+        existsAfter(/databases/$(database)/documents/shops/$(incoming().shopId)) &&
+        getAfter(/databases/$(database)/documents/shops/$(incoming().shopId)).data.uid == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['date', 'shopId', 'shopName', 'amount', 'method', 'referenceNumber', 'notes', 'updatedAt']);
+      allow delete: if isValidId(paymentId) && isOwner(existing().uid);
+    }
+
+    match /expenses/{expenseId} {
+      allow get: if isValidId(expenseId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(expenseId) && isSignedIn() && isValidExpense(incoming(), expenseId);
+      allow update: if isValidId(expenseId) && isOwner(existing().uid) && isValidExpense(incoming(), expenseId) &&
+        incoming().id == existing().id &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().clientRequestId == existing().clientRequestId &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['date', 'category', 'description', 'amount', 'method', 'notes', 'updatedAt']);
+      allow delete: if isValidId(expenseId) && isOwner(existing().uid);
+    }
+
+    match /cashTransactions/{cashTxId} {
+      allow get: if isValidId(cashTxId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(cashTxId) && isSignedIn() && isValidCashTx(incoming(), cashTxId);
+      allow update: if isValidId(cashTxId) && isOwner(existing().uid) && isValidCashTx(incoming(), cashTxId) &&
+        incoming().id == existing().id &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().clientRequestId == existing().clientRequestId &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['date', 'type', 'account', 'toAccount', 'amount', 'description', 'referenceNumber', 'notes', 'updatedAt']);
+      allow delete: if isValidId(cashTxId) && isOwner(existing().uid);
+    }
+
+    match /auditLogs/{logId} {
+      allow get: if isValidId(logId) && isOwner(existing().uid);
+      allow list: if isSignedIn() && existing().uid == request.auth.uid;
+      allow create: if isValidId(logId) && isSignedIn() && isValidAuditLog(incoming(), logId);
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "DAILY ACCOUNT",
+  "description": "Professional Construction Site Accounting Management System in BDT with real-time Cloud Firestore synchronization and offline PWA support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

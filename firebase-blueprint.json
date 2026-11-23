@@ -1,0 +1,176 @@
+{
+  "entities": {
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Single construction site metadata and opening liquid balances.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "siteName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "siteLocation": { "type": "string", "maxLength": 200 },
+        "openingCash": { "type": "number" },
+        "openingBank": { "type": "number" },
+        "openingMobile": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "siteName", "siteLocation", "openingCash", "openingBank", "openingMobile", "createdAt", "updatedAt"]
+    },
+    "Shop": {
+      "title": "Shop",
+      "description": "Supplier or shop account for the construction site.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "ownerName": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "address": { "type": "string", "maxLength": 240 },
+        "openingBalance": { "type": "number" },
+        "openingBalanceType": { "type": "string", "enum": ["payable", "receivable"] },
+        "notes": { "type": "string", "maxLength": 500 },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "shopName", "ownerName", "phone", "address", "openingBalance", "openingBalanceType", "notes", "isActive", "createdAt", "updatedAt"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Material or labour purchase recorded against a supplier shop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "maxLength": 10 },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "materialName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "category": {
+          "type": "string",
+          "enum": ["Cement", "Rod / Steel", "Sand", "Stone / Brick Chips", "Brick", "Electrical", "Plumbing", "Tiles", "Paint", "Hardware", "Labour", "Other"]
+        },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 500 },
+        "clientRequestId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "date", "shopId", "shopName", "materialName", "category", "quantity", "unit", "rate", "totalAmount", "notes", "clientRequestId", "createdAt", "updatedAt"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment made to a supplier shop reducing payable or creating advance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "maxLength": 10 },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["Cash", "Bank", "Mobile Banking", "Other"] },
+        "referenceNumber": { "type": "string", "maxLength": 80 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "clientRequestId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "date", "shopId", "shopName", "amount", "method", "referenceNumber", "notes", "clientRequestId", "createdAt", "updatedAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Direct site expense independent of supplier purchases.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "maxLength": 10 },
+        "category": {
+          "type": "string",
+          "enum": ["Labour", "Transport", "Food", "Electricity", "Water", "Equipment", "Maintenance", "Office", "Other"]
+        },
+        "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["Cash", "Bank", "Mobile Banking", "Other"] },
+        "notes": { "type": "string", "maxLength": 500 },
+        "clientRequestId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "date", "category", "description", "amount", "method", "notes", "clientRequestId", "createdAt", "updatedAt"]
+    },
+    "CashTransaction": {
+      "title": "CashTransaction",
+      "description": "Cash in, cash out, or internal transfer between Cash, Bank, and Mobile Banking.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "maxLength": 10 },
+        "type": { "type": "string", "enum": ["cash_in", "cash_out", "transfer"] },
+        "account": { "type": "string", "enum": ["Cash", "Bank", "Mobile Banking"] },
+        "toAccount": { "type": "string", "enum": ["Cash", "Bank", "Mobile Banking", ""] },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "referenceNumber": { "type": "string", "maxLength": 80 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "clientRequestId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "date", "type", "account", "toAccount", "amount", "description", "referenceNumber", "notes", "clientRequestId", "createdAt", "updatedAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable audit trail for financial mutations and restores.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "action": { "type": "string", "enum": ["create", "update", "delete", "restore", "settings"] },
+        "entityType": { "type": "string", "enum": ["shop", "purchase", "payment", "expense", "cash", "settings", "backup"] },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "beforeData": { "type": "string", "maxLength": 2000 },
+        "afterData": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "action", "entityType", "entityId", "summary", "beforeData", "afterData", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/siteSettings/{uid}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Admin construction site settings and opening liquid balances."
+    },
+    "/shops/{shopId}": {
+      "schema": { "$ref": "#/entities/Shop" },
+      "description": "Construction site suppliers and shops."
+    },
+    "/purchases/{purchaseId}": {
+      "schema": { "$ref": "#/entities/Purchase" },
+      "description": "Supplier material and labour purchase records."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Payments disbursed to supplier shops."
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Direct site operational expenses."
+    },
+    "/cashTransactions/{cashTxId}": {
+      "schema": { "$ref": "#/entities/CashTransaction" },
+      "description": "Cash in, cash out, and internal account transfers."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable financial audit log records."
+    }
+  }
+}
